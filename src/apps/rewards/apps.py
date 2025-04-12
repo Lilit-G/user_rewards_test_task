@@ -7,4 +7,5 @@ class AuthenticationConfig(AppConfig):
     label = 'rewards'
 
     def ready(self):
+        import src.apps.rewards.signals
         self.verbose_name = _('Rewards')
