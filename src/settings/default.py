@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'corsheaders',
 
     'src.apps.authentication',
+    'src.apps.rewards',
     'rest_framework_simplejwt',
 
 ]
