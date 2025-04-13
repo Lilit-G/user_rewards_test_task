@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+      - REDIS_URL=redis://redis:6379/0
+      - DB_HOST=db
+      - DB_NAME=user_rewards
+      - DB_USER=postgres
+      - DB_PASSWORD=12345
+      - DB_PORT=5432
+    depends_on:
+      - redis
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:14-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=user_rewards
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=12345
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  celery_worker:
+    build: .
+    command: celery -A src.apps.rewards worker -l INFO
+    volumes:
+      - .:/app
+    environment:
+      - DEBUG=1
+      - REDIS_URL=redis://redis:6379/0
+      - DB_HOST=db
+      - DB_NAME=user_rewards
+      - DB_USER=postgres
+      - DB_PASSWORD=12345
+      - DB_PORT=5432
+    depends_on:
+      - web
+      - redis
+      - db
+    restart: unless-stopped
+
+  celery_beat:
+    build: .
+    command: celery -A src.apps.rewards beat -l INFO
+    volumes:
+      - .:/app
+    environment:
+      - DEBUG=1
+      - REDIS_URL=redis://redis:6379/0
+      - DB_HOST=db
+      - DB_NAME=user_rewards
+      - DB_USER=postgres
+      - DB_PASSWORD=12345
+      - DB_PORT=5432
+    depends_on:
+      - web
+      - redis
+      - db
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
